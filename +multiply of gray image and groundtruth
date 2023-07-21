@@ -1,0 +1,42 @@
+import os
+import glob
+from skimage import io
+import random
+import numpy as np
+import cv2
+
+dataset_path = r'C:\Users\Merna\OneDrive\Desktop\INTERN\Project\results'
+source_path = r'C:\Users\Merna\OneDrive\Desktop\INTERN\Project\dataset'
+class_names = ['badWeather', 'baseline', 'cameraJitter', 'dynamicBackground', 'intermittentObjectMotion', 'lowFramerate', 'nightVideos', 'PTZ', 'shadow', 'thermal', 'turbulence']
+
+# image_path = os.path.join(dataset_path, class_names[1], '*')
+# image_path = glob.glob(image_path)
+# image = io.imread(image_path[2])
+def equalize_image (image):
+    # if image.shape == 3:
+    #     image_gray=  cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    equ = cv2.equalizeHist(image)
+    # res = np.hstack((image_gray, equ))  # stacking images side-by-side
+    return equ
+
+if not os.path.exists(dataset_path):
+    os.makedirs(dataset_path)
+
+for root,dirs,files in os.walk(source_path):
+    for dir_name in dirs:
+        if dir_name == 'input':
+            input_folder_path = os.path.join(root, dir_name)
+            output_folder_path = os.path.join(dataset_path, os.path.relpath(root, source_path))
+            os.makedirs(output_folder_path, exist_ok=True)
+            for file_name in os.listdir(input_folder_path):
+                image_path=os.path.join(input_folder_path,file_name)
+                image=cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+                eqimage= equalize_image(image)
+                converted_img = cv2.cvtColor(eqimage, cv2.COLOR_GRAY2BGR)
+                dn=cv2.fastNlMeansDenoisingColored(converted_img,None, 10,10,10)
+                # dsize
+                dsize = (720, 480)
+                # resize image
+                rz = cv2.resize(dn, dsize)
+                dataset_path=os.path.join(output_folder_path,file_name)
+                cv2.imwrite(dataset_path,rz)
